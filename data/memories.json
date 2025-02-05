@@ -1,0 +1,60 @@
+{
+  "title": "Our Beautiful Memories",
+  "backgroundMusic": "/music/1.mp3",
+  "featured": [
+    {
+      "id": 1,
+      "type": "image",
+      "url": "https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?q=80&w=1887&auto=format&fit=crop",
+      "caption": "Our First Date",
+      "date": "2024-01-01",
+      "category": "Dates"
+    },
+    {
+      "id": 2,
+      "type": "image",
+      "url": "https://images.unsplash.com/photo-1621252179027-94459d278660?q=80&w=1770&auto=format&fit=crop",
+      "caption": "Beach Day",
+      "date": "2024-02-14",
+      "category": "Adventures"
+    }
+  ],
+  "categories": [
+    {
+      "id": "messages",
+      "name": "PSAN",
+      "description": "Sweet messages we've shared",
+      "icon": "MessageHeart"
+    },
+    {
+      "id": "dates",
+      "name": "Dates",
+      "description": "Our special moments together",
+      "icon": "Heart"
+    },
+    {
+      "id": "adventures",
+      "name": "Adventures",
+      "description": "Exploring the world together",
+      "icon": "Compass"
+    }
+  ],
+  "memories": [
+    {
+      "id": 1,
+      "type": "image",
+      "url": "https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?q=80&w=1887&auto=format&fit=crop",
+      "caption": "Our First Date",
+      "date": "2024-01-01",
+      "category": "dates"
+    },
+    {
+      "id": 2,
+      "type": "image",
+      "url": "https://images.unsplash.com/photo-1621252179027-94459d278660?q=80&w=1770&auto=format&fit=crop",
+      "caption": "Beach Day",
+      "date": "2024-02-14",
+      "category": "adventures"
+    }
+  ]
+}
