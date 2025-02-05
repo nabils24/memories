@@ -1,13 +1,12 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Image from 'next/image';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Card, CardContent } from '@/components/ui/card';
-import { Calendar, Heart, Sparkles } from 'lucide-react';
-
-import memories from '@/lib/supabase/memories';
-
+import { Calendar, Heart, Sparkles, Camera } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { toast } from '@/hooks/use-toast';
 
 interface Memory {
   id: number;
@@ -21,8 +20,139 @@ interface MemoriesGalleryProps {
   memories: Memory[];
 }
 
+const isMobileDevice = () => {
+  return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+};
+
+const downloadMedia = async (url: string, fileName: string): Promise<boolean> => {
+  try {
+    // Tambahkan timestamp untuk mencegah cache
+    const timeStamp = new Date().getTime();
+    const mediaUrl = `${url}?t=${timeStamp}`;
+
+    const response = await fetch(mediaUrl);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const blob = await response.blob();
+
+    // Buat URL untuk download
+    const blobUrl = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    link.download = fileName;
+
+    // Trigger download
+    document.body.appendChild(link);
+    link.click();
+
+    // Cleanup
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(blobUrl);
+
+    // Berikan waktu untuk proses download
+    await new Promise(resolve => setTimeout(resolve, 1500));
+
+    return true;
+  } catch (error) {
+    console.error('Download error:', error);
+    throw new Error(`Gagal mengunduh media: ${error.message}`);
+  }
+};
+
+const openInstagram = () => {
+  return new Promise<boolean>((resolve) => {
+    try {
+      // Coba buka Instagram
+      window.location.href = 'instagram://story-camera';
+
+      // Check jika Instagram terbuka
+      setTimeout(() => {
+        if (document.hidden) {
+          resolve(true);
+        } else {
+          resolve(false);
+        }
+      }, 2000);
+    } catch (error) {
+      resolve(false);
+    }
+  });
+};
+
 export default function MemoriesGallery({ memories }: MemoriesGalleryProps) {
   const [selectedMemory, setSelectedMemory] = useState<Memory | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const handleShareToInstagram = async () => {
+    if (!selectedMemory) return;
+
+    setIsProcessing(true);
+
+    try {
+      if (!isMobileDevice()) {
+        toast({
+          title: "Perangkat Tidak Didukung",
+          description: "Fitur ini hanya tersedia di perangkat mobile",
+          duration: 5000,
+        });
+        return;
+      }
+
+      // Generate nama file
+      const timestamp = new Date().getTime();
+      const fileExtension = selectedMemory.type === 'image' ? 'jpg' : 'mp4';
+      const fileName = `memory_${timestamp}.${fileExtension}`;
+
+      // Step 1: Download media
+      toast({
+        title: "Memproses",
+        description: "Sedang mengunduh media...",
+        duration: 2000,
+      });
+
+      await downloadMedia(selectedMemory.url, fileName);
+
+      // Step 2: Buka Instagram
+      toast({
+        title: "Berhasil",
+        description: "Media telah disimpan, membuka Instagram...",
+        duration: 2000,
+      });
+
+      const instagramOpened = await openInstagram();
+
+      if (!instagramOpened) {
+        // Instagram tidak terinstall
+        const isAndroid = /Android/i.test(navigator.userAgent);
+        const storeUrl = isAndroid
+          ? 'https://play.google.com/store/apps/details?id=com.instagram.android'
+          : 'https://apps.apple.com/id/app/instagram/id389801252';
+
+        window.location.href = storeUrl;
+
+        toast({
+          title: "Instagram Tidak Ditemukan",
+          description: "Silakan install Instagram terlebih dahulu",
+          duration: 5000,
+        });
+      }
+
+    } catch (error) {
+      console.error('Error full process:', error);
+      toast({
+        title: "Gagal",
+        description: error.message || "Terjadi kesalahan saat memproses media",
+        variant: "destructive",
+        duration: 5000,
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // ... Rest of the component code (render part) stays the same ...
 
   return (
     <>
@@ -97,11 +227,36 @@ export default function MemoriesGallery({ memories }: MemoriesGalleryProps) {
                   />
                 )}
               </div>
-              <div className="text-center">
-                <h2 className="text-2xl font-semibold text-gray-800">{selectedMemory.caption}</h2>
-                <p className="text-gray-600 mt-1">
-                  {new Date(selectedMemory.date).toLocaleDateString()}
-                </p>
+              <div className="text-center space-y-4">
+                <div>
+                  <h2 className="text-2xl font-semibold text-gray-800">
+                    {selectedMemory.caption}
+                  </h2>
+                  <p className="text-gray-600 mt-1">
+                    {new Date(selectedMemory.date).toLocaleDateString()}
+                  </p>
+                </div>
+
+                <div className="flex justify-center">
+                  <Button
+                    onClick={handleShareToInstagram}
+                    disabled={isProcessing}
+                    className="bg-gradient-to-r from-pink-500 to-purple-600 text-white hover:from-pink-600 hover:to-purple-700"
+                  >
+                    <Camera className="w-4 h-4 mr-2" />
+                    {isProcessing ? 'Memproses...' : 'Bagikan ke Instagram'}
+                  </Button>
+                </div>
+
+                {isMobileDevice() ? (
+                  <p className="text-sm text-gray-500">
+                    Media akan disimpan ke galeri dan Instagram akan terbuka otomatis
+                  </p>
+                ) : (
+                  <p className="text-sm text-gray-500">
+                    Fitur ini hanya tersedia di perangkat mobile
+                  </p>
+                )}
               </div>
             </div>
           )}
