@@ -26,6 +26,8 @@ const availableIcons = [
 
 export default function AdminPage() {
 
+  const siapakamu = sessionStorage.getItem("siapakamu");
+
   const { toast } = useToast()
   const [isUploading, setIsUploading] = useState(false);
   const [create, setCreate] = useState(false);
@@ -70,6 +72,12 @@ export default function AdminPage() {
 
     }
   };
+
+  useEffect(() => {
+    if (siapakamu !== "true") {
+      window.location.href = "/siapakamu";
+    }
+  }, [siapakamu]);
 
   useEffect(() => {
     fetchAllData();
@@ -366,12 +374,18 @@ export default function AdminPage() {
     }
   };
 
+  //HandleBackToMemories
+  const handleBackToMemories = async () => {
+    sessionStorage.removeItem("siapakamu");
+    window.location.href = "/";
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 p-8">
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-gray-800">Admin Panel</h1>
-            <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex flex-col md:flex-row gap-4">
             <Button
               onClick={handleSave}
               disabled={!hasChanges() || isLoading}
@@ -379,10 +393,10 @@ export default function AdminPage() {
             >
               {isLoading ? "Saving..." : "Save Changes"}
             </Button>
-            <Link href="/" className="w-full md:w-auto">
-              <Button variant="outline" className="w-full md:w-auto">Back to Memories</Button>
-            </Link>
-            </div>
+
+            <Button onClick={handleBackToMemories} variant="outline" className="w-full md:w-auto">Back to Memories</Button>
+
+          </div>
         </div>
 
         <Tabs defaultValue="memories" className="space-y-6">
