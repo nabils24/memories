@@ -9,6 +9,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar, Image as ImageIcon, Music, Video, X, Plus, MessageCircleHeart, Heart, Compass } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast"
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { format } from 'date-fns';
 
@@ -25,9 +26,8 @@ const availableIcons = [
 ];
 
 export default function AdminPage() {
-
-  const siapakamu = sessionStorage.getItem("siapakamu");
-
+  const router = useRouter();
+  const [siapakamu, setSiapakamu] = useState(null);
   const { toast } = useToast()
   const [isUploading, setIsUploading] = useState(false);
   const [create, setCreate] = useState(false);
@@ -74,15 +74,18 @@ export default function AdminPage() {
   };
 
   useEffect(() => {
-    if (siapakamu !== "true") {
-      window.location.href = "/siapakamu";
+    if (typeof window !== "undefined") {
+      const storedValue = sessionStorage.getItem("siapakamu");
+      setSiapakamu(storedValue);
+      if (!storedValue) {
+        router.push('/siapakamu');
+      }
     }
-  }, [siapakamu]);
+  }, []);
 
   useEffect(() => {
     fetchAllData();
-  }, [
-  ]);
+  }, []);
 
   // Check if there are unsaved changes
   const hasChanges = () => {
@@ -376,8 +379,14 @@ export default function AdminPage() {
 
   //HandleBackToMemories
   const handleBackToMemories = async () => {
-    sessionStorage.removeItem("siapakamu");
-    window.location.href = "/";
+    if (typeof window !== "undefined") {
+      try {
+        sessionStorage.removeItem("siapakamu");
+        window.location.href = "/";
+      } catch (e) {
+        return false;
+      }
+    }
   }
 
   return (

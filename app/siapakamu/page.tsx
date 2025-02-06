@@ -16,8 +16,20 @@ export default function siapakamuPage() {
 
     useEffect(() => {
         if (value == 200324) {
-            sessionStorage.setItem("siapakamu", "true");
-            window.location.href = "/admin";
+            if (typeof window !== "undefined") {
+                try {
+                    sessionStorage.setItem("siapakamu", "true");
+                    window.location.href = "/admin";
+
+                } catch (e) {
+                    toast({
+                        variant: "destructive",
+                        title: "Ciee salahh!",
+                        description: "Coba lagi ajaaa"
+                    });
+                }
+            }
+
         } else if (value.length == 6) {
             toast({
                 variant: "destructive",
