@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, FormEvent } from 'react';
 import Image from 'next/image';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import CelebrationConfetti from './CelebrationConfetti';
 import { Card, CardContent } from '@/components/ui/card';
 import {
   Calendar,
@@ -509,14 +510,23 @@ export default function MemoriesGallery({ memories }: MemoriesGalleryProps) {
 
       {/* Modal untuk detail memory */}
       <Dialog open={!!selectedMemory} onOpenChange={() => setSelectedMemory(null)}>
-        <DialogContent ref={modalRef} className="max-w-4xl bg-white backdrop-blur-sm">
+        {selectedMemory?.confetti === true ? (
+          <CelebrationConfetti />
+        ) : (
+          <div></div>
+        )
+        }
+        <DialogContent
+          ref={modalRef}
+          className="w-full max-w-full sm:max-w-4xl lg:w-max bg-white backdrop-blur-sm p-4 sm:p-6"
+        >
           <DialogTitle className="sr-only">
             {selectedMemory?.caption || 'Memory Details'}
           </DialogTitle>
           {selectedMemory && (
             <div className="space-y-4">
               {/* Header modal: tombol fullscreen */}
-              <div className="flex justify-end">
+              <div className="flex justify-start">
                 <button
                   onClick={handleToggleFullscreen}
                   className="p-2 rounded-md border border-gray-300"
@@ -549,7 +559,7 @@ export default function MemoriesGallery({ memories }: MemoriesGalleryProps) {
               </div>
               <div className="text-center space-y-4">
                 <div>
-                  <h2 className="text-2xl font-semibold text-gray-800">
+                  <h2 className="text-2xl sm:text-3xl font-semibold text-gray-800">
                     {selectedMemory.caption}
                   </h2>
                   <p className="text-gray-600 mt-1">
@@ -559,20 +569,12 @@ export default function MemoriesGallery({ memories }: MemoriesGalleryProps) {
                     Dilihat: {views[selectedMemory.id] || 0} kali
                   </p>
                 </div>
-                <div className="flex justify-center space-x-4">
+                <div className="flex flex-col sm:flex-row justify-center items-center space-y-2 sm:space-y-0 sm:space-x-4">
                   <Button
-                    onClick={handleShareToInstagram}
-                    disabled={isProcessing}
-                    className="bg-gradient-to-r from-pink-500 to-purple-600 text-white hover:from-pink-600 hover:to-purple-700"
+                    onClick={handleDownload}
+                    variant="outline"
+                    className="w-full sm:w-auto"
                   >
-                    <Camera className="w-4 h-4 mr-2" />
-                    {isProcessing ? 'Memproses...' : 'Bagikan ke Instagram'}
-                  </Button>
-                  <Button onClick={() => handleShare(selectedMemory)} variant="outline">
-                    <Share2 className="w-4 h-4 mr-2" />
-                    Share
-                  </Button>
-                  <Button onClick={handleDownload} variant="outline">
                     <Download className="w-4 h-4 mr-2" />
                     Download
                   </Button>
@@ -589,7 +591,10 @@ export default function MemoriesGallery({ memories }: MemoriesGalleryProps) {
                 </h3>
                 <div className="max-h-60 overflow-y-auto space-y-2 mb-4">
                   {(comments[selectedMemory.id] || []).map((comment) => (
-                    <div key={comment.id} className="p-2 bg-gray-100 rounded-md text-left">
+                    <div
+                      key={comment.id}
+                      className="p-2 bg-gray-100 rounded-md text-left"
+                    >
                       <p className="text-gray-700">{comment.text}</p>
                       <p className="text-xs text-gray-500">
                         {new Date(comment.timestamp).toLocaleString()}
@@ -600,7 +605,10 @@ export default function MemoriesGallery({ memories }: MemoriesGalleryProps) {
                     <p className="text-gray-500 text-sm">Belum ada komentar.</p>
                   )}
                 </div>
-                <form onSubmit={handleAddComment} className="flex flex-col sm:flex-row gap-2">
+                <form
+                  onSubmit={handleAddComment}
+                  className="flex flex-col sm:flex-row gap-2"
+                >
                   <input
                     type="text"
                     placeholder="Tulis komentar..."
@@ -608,13 +616,16 @@ export default function MemoriesGallery({ memories }: MemoriesGalleryProps) {
                     onChange={(e) => setCommentInput(e.target.value)}
                     className="flex-1 p-2 border border-gray-300 rounded-md"
                   />
-                  <Button type="submit">Kirim</Button>
+                  <Button type="submit" className="w-full sm:w-auto">
+                    Kirim
+                  </Button>
                 </form>
               </div>
             </div>
           )}
         </DialogContent>
       </Dialog>
+
     </div>
   );
 }
