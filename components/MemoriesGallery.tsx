@@ -388,7 +388,6 @@ export default function MemoriesGallery({ memories }: MemoriesGalleryProps) {
     <div>
       {/* Header dengan filter kategori, tombol acak, dan opsi filter bookmark */}
       <header className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
-        <h2 className="text-2xl font-bold text-gray-800">Gallery Memories</h2>
         <div className="flex flex-col sm:flex-row sm:space-x-4 items-center">
           <div className="flex space-x-4 items-center">
             <label htmlFor="category" className="text-gray-700 font-medium">
