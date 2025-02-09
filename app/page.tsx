@@ -6,7 +6,8 @@ import FeaturedSlider from '@/components/FeaturedSlider';
 import CategorySection from '@/components/CategorySection';
 import MusicPlayer from '@/components/MusicPlayer';
 import Timeline from '@/components/Timeline';
-import CelebrationConfetti from '@/components/CelebrationConfetti';
+import InteractiveStoryMode from "@/components/InteractiveStoryMode";
+
 import { Button } from '@/components/ui/button';
 
 import Link from 'next/link';
@@ -64,7 +65,7 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-50 to-pink-50">
-      
+
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="flex justify-end mb-4">
           <Link href="/admin">

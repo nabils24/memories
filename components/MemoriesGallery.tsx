@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, FormEvent } from 'react';
+import { motion, AnimatePresence } from "framer-motion";
 import Image from 'next/image';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import CelebrationConfetti from './CelebrationConfetti';
@@ -20,6 +21,15 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 interface Memory {
   id: number;
@@ -133,6 +143,13 @@ const LazyVideo = ({
       )}
     </div>
   );
+};
+
+// Variants untuk animasi modal
+const modalVariants = {
+  hidden: { opacity: 0, scale: 0.8 },
+  visible: { opacity: 1, scale: 1, transition: { duration: 0.3 } },
+  exit: { opacity: 0, scale: 0.8, transition: { duration: 0.2 } }
 };
 
 export default function MemoriesGallery({ memories }: MemoriesGalleryProps) {
@@ -389,27 +406,22 @@ export default function MemoriesGallery({ memories }: MemoriesGalleryProps) {
     <div>
       {/* Header dengan filter kategori, tombol acak, dan opsi filter bookmark */}
       <header className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
-        <div className="flex flex-col sm:flex-row sm:space-x-4 items-center">
-          <div className="flex space-x-4 items-center">
-            <label htmlFor="category" className="text-gray-700 font-medium">
-              Kategori:
-            </label>
-            <select
-              id="category"
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="border border-gray-300 rounded-md p-1"
-            >
-              <option value="All">Semua</option>
-              <option value="Bookmarked">Bookmarked</option>
-              {categories.map((category) => (
-                <option key={category} value={category}>
-                  {category}
-                </option>
-              ))}
-            </select>
+        <div className="flex flex-col sm:flex-row sm:space-x-4 items-center w-full">
+          <div className="flex flex-col sm:flex-row sm:space-x-4 items-center w-full sm:w-auto">
+            <Select onValueChange={setSelectedCategory}>
+              <SelectTrigger className="w-full sm:w-[180px]">{selectedCategory}</SelectTrigger>
+              <SelectContent>
+          <SelectGroup>
+            <SelectItem value="All">Semua</SelectItem>
+            <SelectItem value="Bookmarked">Bookmarked</SelectItem>
+            {categories.map((category) => (
+              <SelectItem key={category} value={category}>{category}</SelectItem>
+            ))}
+          </SelectGroup>
+              </SelectContent>
+            </Select>
           </div>
-          <Button onClick={handleShuffle} variant="outline">
+          <Button onClick={handleShuffle} variant="outline" className="w-full sm:w-auto mt-4 sm:mt-0">
             Acak Memories
           </Button>
         </div>
@@ -418,93 +430,103 @@ export default function MemoriesGallery({ memories }: MemoriesGalleryProps) {
       {/* Grid gallery */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-24">
         {filteredMemories.map((memory, index) => (
-          <Card
+          <motion.div
             key={memory.id}
-            className="group cursor-pointer rounded-xl border border-gray-200 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 animate-float"
-            style={{ animationDelay: `${index * 0.2}s` }}
-            onClick={() => setSelectedMemory(memory)}
+            drag
+            dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
+            whileDrag={{ scale: 1.05 }}
+            whileHover={{ scale: 1.03, rotate: 1 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0, transition: { delay: index * 0.1 } }}
           >
-            <CardContent className="p-3">
-              <div className="relative aspect-square rounded-lg overflow-hidden">
-                {memory.type === 'image' ? (
-                  <Image
-                    src={memory.url}
-                    alt={memory.caption}
-                    fill
-                    loading="lazy"
-                    className="object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                ) : (
-                  <LazyVideo
-                    src={memory.url}
-                    className="w-full h-full object-cover"
-                    controls={false}
-                  />
-                )}
-                {/* Overlay animasi saat hover */}
-                <div className="absolute inset-0 bg-gradient-to-t from-pink-500/50 to-purple-500/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                  <div className="transform -rotate-12 transition-transform group-hover:rotate-0">
-                    <Heart className="w-12 h-12 text-white drop-shadow-lg" />
+            <Card
+              className="group cursor-pointer rounded-xl border border-gray-200 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 animate-float"
+              onClick={() => setSelectedMemory(memory)}
+            >
+              <CardContent className="p-3">
+                <div className="relative aspect-square rounded-lg overflow-hidden">
+                  {memory.type === 'image' ? (
+                    <Image
+                      src={memory.url}
+                      alt={memory.caption}
+                      fill
+                      loading="lazy"
+                      className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  ) : (
+                    <LazyVideo
+                      src={memory.url}
+                      className="w-full h-full object-cover"
+                      controls={false}
+                    />
+                  )}
+                  {/* Overlay animasi saat hover */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-pink-500/50 to-purple-500/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                    <div className="transform -rotate-12 transition-transform group-hover:rotate-0">
+                      <Heart className="w-12 h-12 text-white drop-shadow-lg" />
+                    </div>
+                  </div>
+                  {/* Tombol Bookmark */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleToggleBookmark(memory.id);
+                    }}
+                    className="absolute top-2 right-2 p-1 bg-white rounded-full shadow"
+                  >
+                    <Bookmark
+                      className={`w-5 h-5 ${bookmarks[memory.id] ? 'text-yellow-500' : 'text-gray-500'}`}
+                    />
+                  </button>
+                </div>
+                <div className="mt-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-lg text-gray-800">{memory.caption}</h3>
+                    <Sparkles className="w-4 h-4 text-pink-400" />
+                  </div>
+                  <div className="flex items-center text-gray-600 mt-1">
+                    <Calendar className="w-4 h-4 mr-1" />
+                    <span className="text-sm">
+                      {new Date(memory.date).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <div className="flex items-center text-gray-600 mt-1">
+                    <Candy className="w-4 h-4 mr-1" />
+                    <span className="text-sm">{memory.category}</span>
+                  </div>
+                  {/* Baris tombol Like dan Share */}
+                  <div className="mt-2 flex items-center justify-between">
+                    <motion.button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleToggleLike(memory.id);
+                      }}
+                      whileTap={{ scale: 0.9 }}
+                      className="flex items-center space-x-1 focus:outline-none"
+                    >
+                      <Heart
+                        className={`w-5 h-5 ${likes[memory.id]?.liked ? 'text-red-500' : 'text-gray-500'}`}
+                      />
+                      <span className="text-sm text-gray-600">
+                        {likes[memory.id]?.count || 0}
+                      </span>
+                    </motion.button>
+                    <motion.button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleShare(memory);
+                      }}
+                      whileTap={{ scale: 0.9 }}
+                      className="flex items-center space-x-1 focus:outline-none"
+                    >
+                      <Share2 className="w-5 h-5 text-gray-500" />
+                      <span className="text-sm text-gray-600">Share</span>
+                    </motion.button>
                   </div>
                 </div>
-                {/* Tombol Bookmark */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleToggleBookmark(memory.id);
-                  }}
-                  className="absolute top-2 right-2 p-1 bg-white rounded-full shadow"
-                >
-                  <Bookmark
-                    className={`w-5 h-5 ${bookmarks[memory.id] ? 'text-yellow-500' : 'text-gray-500'}`}
-                  />
-                </button>
-              </div>
-              <div className="mt-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-lg text-gray-800">{memory.caption}</h3>
-                  <Sparkles className="w-4 h-4 text-pink-400" />
-                </div>
-                <div className="flex items-center text-gray-600 mt-1">
-                  <Calendar className="w-4 h-4 mr-1" />
-                  <span className="text-sm">
-                    {new Date(memory.date).toLocaleDateString()}
-                  </span>
-                </div>
-                <div className="flex items-center text-gray-600 mt-1">
-                  <Candy className="w-4 h-4 mr-1" />
-                  <span className="text-sm">{memory.category}</span>
-                </div>
-                {/* Baris tombol Like dan Share */}
-                <div className="mt-2 flex items-center justify-between">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleToggleLike(memory.id);
-                    }}
-                    className="flex items-center space-x-1 focus:outline-none"
-                  >
-                    <Heart
-                      className={`w-5 h-5 ${likes[memory.id]?.liked ? 'text-red-500 animate-bounce' : 'text-gray-500'}`}
-                    />
-                    <span className="text-sm text-gray-600">
-                      {likes[memory.id]?.count || 0}
-                    </span>
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleShare(memory);
-                    }}
-                    className="flex items-center space-x-1 focus:outline-none"
-                  >
-                    <Share2 className="w-5 h-5 text-gray-500" />
-                    <span className="text-sm text-gray-600">Share</span>
-                  </button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </motion.div>
         ))}
       </div>
 
@@ -514,118 +536,132 @@ export default function MemoriesGallery({ memories }: MemoriesGalleryProps) {
           <CelebrationConfetti />
         ) : (
           <div></div>
-        )
-        }
-        <DialogContent
-          ref={modalRef}
-          className="w-full max-w-full sm:max-w-4xl lg:w-max bg-white backdrop-blur-sm p-4 sm:p-6"
-        >
-          <DialogTitle className="sr-only">
-            {selectedMemory?.caption || 'Memory Details'}
-          </DialogTitle>
+        )}
+        <AnimatePresence>
           {selectedMemory && (
-            <div className="space-y-4">
-              {/* Header modal: tombol fullscreen */}
-              <div className="flex justify-start">
-                <button
-                  onClick={handleToggleFullscreen}
-                  className="p-2 rounded-md border border-gray-300"
-                  title="Toggle Fullscreen"
-                >
-                  {isFullscreen ? (
-                    <Minimize className="w-5 h-5 text-gray-800" />
-                  ) : (
-                    <Maximize className="w-5 h-5 text-gray-800" />
-                  )}
-                </button>
-              </div>
-              <div className="relative aspect-video rounded-lg overflow-hidden">
-                {selectedMemory.type === 'image' ? (
-                  <Image
-                    src={selectedMemory.url}
-                    alt={selectedMemory.caption}
-                    fill
-                    loading="lazy"
-                    className="object-contain"
-                  />
-                ) : (
-                  <video
-                    src={selectedMemory.url}
-                    className="w-full h-full"
-                    controls
-                    autoPlay
-                  />
-                )}
-              </div>
-              <div className="text-center space-y-4">
-                <div>
-                  <h2 className="text-2xl sm:text-3xl font-semibold text-gray-800">
-                    {selectedMemory.caption}
-                  </h2>
-                  <p className="text-gray-600 mt-1">
-                    {new Date(selectedMemory.date).toLocaleDateString()}
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    Dilihat: {views[selectedMemory.id] || 0} kali
-                  </p>
-                </div>
-                <div className="flex flex-col sm:flex-row justify-center items-center space-y-2 sm:space-y-0 sm:space-x-4">
-                  <Button
-                    onClick={handleDownload}
-                    variant="outline"
-                    className="w-full sm:w-auto"
-                  >
-                    <Download className="w-4 h-4 mr-2" />
-                    Download
-                  </Button>
-                </div>
-                <p className="text-sm text-gray-500">
-                  Fitur ini hanya tersedia di perangkat mobile untuk Instagram.
-                </p>
-              </div>
-
-              {/* Bagian komentar */}
-              <div className="mt-4">
-                <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                  Komentar
-                </h3>
-                <div className="max-h-60 overflow-y-auto space-y-2 mb-4">
-                  {(comments[selectedMemory.id] || []).map((comment) => (
-                    <div
-                      key={comment.id}
-                      className="p-2 bg-gray-100 rounded-md text-left"
+            <motion.div
+              variants={modalVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+            >
+              <DialogContent
+                ref={modalRef}
+                className="w-full max-w-full sm:max-w-4xl lg:w-max bg-white backdrop-blur-sm p-4 sm:p-6"
+              >
+                <DialogTitle className="sr-only">
+                  {selectedMemory.caption || 'Memory Details'}
+                </DialogTitle>
+                <div className="space-y-4">
+                  {/* Header modal: tombol fullscreen */}
+                  <div className="flex justify-start">
+                    <button
+                      onClick={handleToggleFullscreen}
+                      className="p-2 rounded-md border border-gray-300"
+                      title="Toggle Fullscreen"
                     >
-                      <p className="text-gray-700">{comment.text}</p>
-                      <p className="text-xs text-gray-500">
-                        {new Date(comment.timestamp).toLocaleString()}
+                      <motion.span whileTap={{ rotate: 360 }}>
+                        {isFullscreen ? (
+                          <Minimize className="w-5 h-5 text-gray-800" />
+                        ) : (
+                          <Maximize className="w-5 h-5 text-gray-800" />
+                        )}
+                      </motion.span>
+                    </button>
+                  </div>
+                  <div className="relative aspect-video rounded-lg overflow-hidden">
+                    {selectedMemory.type === 'image' ? (
+                      <Image
+                        src={selectedMemory.url}
+                        alt={selectedMemory.caption}
+                        fill
+                        loading="lazy"
+                        className="object-contain"
+                      />
+                    ) : (
+                      <video
+                        src={selectedMemory.url}
+                        className="w-full h-full"
+                        controls
+                        autoPlay
+                      />
+                    )}
+                  </div>
+                  <div className="text-center space-y-4">
+                    <div>
+                      <h2 className="text-2xl sm:text-3xl font-semibold text-gray-800">
+                        {selectedMemory.caption}
+                      </h2>
+                      <p className="text-gray-600 mt-1">
+                        {new Date(selectedMemory.date).toLocaleDateString()}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        Dilihat: {views[selectedMemory.id] || 0} kali
                       </p>
                     </div>
-                  ))}
-                  {!(comments[selectedMemory.id] || []).length && (
-                    <p className="text-gray-500 text-sm">Belum ada komentar.</p>
-                  )}
-                </div>
-                <form
-                  onSubmit={handleAddComment}
-                  className="flex flex-col sm:flex-row gap-2"
-                >
-                  <input
-                    type="text"
-                    placeholder="Tulis komentar..."
-                    value={commentInput}
-                    onChange={(e) => setCommentInput(e.target.value)}
-                    className="flex-1 p-2 border border-gray-300 rounded-md"
-                  />
-                  <Button type="submit" className="w-full sm:w-auto">
-                    Kirim
-                  </Button>
-                </form>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+                    <div className="flex flex-col sm:flex-row justify-center items-center space-y-2 sm:space-y-0 sm:space-x-4">
+                      <Button
+                        onClick={handleDownload}
+                        variant="outline"
+                        className="w-full sm:w-auto"
+                      >
+                        <Download className="w-4 h-4 mr-2" />
+                        Download
+                      </Button>
+                    </div>
+                    <p className="text-sm text-gray-500">
+                      Fitur ini hanya tersedia di perangkat mobile untuk Instagram.
+                    </p>
+                  </div>
 
+                  {/* Bagian komentar */}
+                  <div className="mt-4">
+                    <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                      Komentar
+                    </h3>
+                    <div className="max-h-60 overflow-y-auto space-y-2 mb-4">
+                      <AnimatePresence>
+                        {(comments[selectedMemory.id] || []).map((comment) => (
+                          <motion.div
+                            key={comment.id}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: 20 }}
+                            className="p-2 bg-gray-100 rounded-md text-left"
+                          >
+                            <p className="text-gray-700">{comment.text}</p>
+                            <p className="text-xs text-gray-500">
+                              {new Date(comment.timestamp).toLocaleString()}
+                            </p>
+                          </motion.div>
+                        ))}
+                      </AnimatePresence>
+                      {!(comments[selectedMemory.id] || []).length && (
+                        <p className="text-gray-500 text-sm">Belum ada komentar.</p>
+                      )}
+                    </div>
+                    <form
+                      onSubmit={handleAddComment}
+                      className="flex flex-col sm:flex-row gap-2"
+                    >
+                      <input
+                        type="text"
+                        placeholder="Tulis komentar..."
+                        value={commentInput}
+                        onChange={(e) => setCommentInput(e.target.value)}
+                        className="flex-1 p-2 border border-gray-300 rounded-md"
+                      />
+                      <Button type="submit" className="w-full sm:w-auto">
+                        Kirim
+                      </Button>
+                    </form>
+                  </div>
+                </div>
+              </DialogContent>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </Dialog>
     </div>
   );
 }
