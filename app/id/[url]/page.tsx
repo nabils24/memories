@@ -13,25 +13,30 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { HeartHandshake, Sparkles } from 'lucide-react';
 
-
-
-
-
 import memoriesSB from '@/lib/supabase/memories.js';
 import categoriesSB from '@/lib/supabase/categories.js';
 import sliderSB from '@/lib/supabase/slider.js';
 import titleSB from '@/lib/supabase/title.js';
 import musicSB from '@/lib/supabase/music.js';
+import userSB from '@/lib/supabase/user.js';
 
 
 
-export default function Home() {
+export default function Home({ params }) {
+  const [user, setUser] = useState([]);
   const [memories, setMemories] = useState([]);
   const [categories, setCategories] = useState([]);
   const [featured, setFeatured] = useState([]);
   const [music, setMusic] = useState([]);
   const [title, setTitle] = useState('');
   useEffect(() => {
+
+    async function fetchUserByURL() {
+      const data = await userSB.getUserByUrl(params.url);
+      setUser(data[0]);
+    }
+    fetchUserByURL();
+
     async function fetchTitle() {
       const data = await titleSB.getTitle();
       setTitle(data[0].title);
