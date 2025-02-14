@@ -404,7 +404,6 @@ export default function MemoriesGallery({ memories }: MemoriesGalleryProps) {
 
   return (
     <div>
-      {/* Header dengan filter kategori, tombol acak, dan opsi filter bookmark */}
       <header className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
         <div className="flex flex-col sm:flex-row sm:space-x-4 items-center w-full">
           <div className="flex flex-col sm:flex-row sm:space-x-4 items-center w-full sm:w-auto">

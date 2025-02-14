@@ -60,10 +60,22 @@ export default function Home({ params }) {
   useEffect(() => {
 
     async function fetchTitle() {
-      const data = await titleSB.getTitle();
-      setTitle(data[0].title);
+      try {
+        const data = await titleSB.getByUIDTitle(user.user_id);
+
+        if (!data || data.length === 0) {
+          setTitle(params.url); // Nilai default jika tidak ada data
+        } else {
+          setTitle(data[0].title);
+        }
+      } catch (error) {
+        console.error("Error fetching title:", error);
+        setTitle(params.url); // Tampilkan pesan error
+      }
     }
+
     fetchTitle();
+
 
     async function fetchMusic() {
       const data = await musicSB.getMusic();
@@ -72,7 +84,7 @@ export default function Home({ params }) {
     fetchMusic();
 
     async function fetchCategories() {
-      const data = await categoriesSB.getCategories();
+      const data = await categoriesSB.getByUIDCategories(user.user_id);
       setCategories(data);
     }
     fetchCategories();
@@ -92,7 +104,6 @@ export default function Home({ params }) {
   if (!user.user_id) return <Loading />;
   return (
     <main className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-50 to-pink-50">
-
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="flex justify-end mb-4">
           <Link href="/admin">
@@ -106,7 +117,7 @@ export default function Home({ params }) {
           <div className="flex items-center justify-center gap-2 mb-4">
             <Sparkles className="w-8 h-8 text-pink-500" />
             <h1 className="text-4xl md:text-6xl font-bold text-gray-800">
-              {title}
+              {!title ? params.url : title}
             </h1>
             <Sparkles className="w-8 h-8 text-pink-500" />
           </div>
@@ -119,17 +130,29 @@ export default function Home({ params }) {
         {/* <div className="mb-12">
           <FeaturedSlider memories={featured} />
         </div> */}
-
-        <div className="mb-16">
-          <h2 className="text-3xl font-bold text-center mb-8 text-gray-800">Our Memory Categories</h2>
-          <CategorySection categories={categories} />
-        </div>
-
-        <div className="relative">
-          <div className="absolute inset-0 bg-hearts opacity-5 pointer-events-none" />
-          <h2 className="text-3xl font-bold text-center mb-8 text-gray-800">Recent Memories</h2>
-          <MemoriesGallery memories={memories} />
-        </div>
+        {!categories || categories.length === 0 ? (
+          <div className="relative pb-24">
+            <div className="absolute inset-0 bg-hearts opacity-5 pointer-events-none" />
+            <h2 className="text-3xl font-bold text-center mb-8 text-gray-800">Yahh sepertinya belum ada kategori yang dibuat😔</h2>
+          </div>
+        ) : (
+          <div className="mb-16">
+            <h2 className="text-3xl font-bold text-center mb-8 text-gray-800">Our Memory Categories</h2>
+            <CategorySection categories={categories} />
+          </div>
+        )}
+        {!memories || memories.length === 0 ? (
+          <div className="relative pb-24">
+            <div className="absolute inset-0 bg-hearts opacity-5 pointer-events-none" />
+            <h2 className="text-3xl font-bold text-center mb-8 text-gray-800">Yahh sepertinya belum ada memori yang dibuat😔</h2>
+          </div>
+        ) : (
+          <div className="relative">
+            <div className="absolute inset-0 bg-hearts opacity-5 pointer-events-none" />
+            <h2 className="text-3xl font-bold text-center mb-8 text-gray-800">Recent Memories</h2>
+            <MemoriesGallery memories={memories} />
+          </div>
+        )}
 
         {/* <div className="relative pb-20">
           <div className="absolute inset-0 bg-hearts opacity-5 pointer-events-none" />
