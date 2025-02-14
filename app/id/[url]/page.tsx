@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import MemoriesGallery from '@/components/MemoriesGallery';
 import FeaturedSlider from '@/components/FeaturedSlider';
 import CategorySection from '@/components/CategorySection';
 import MusicPlayer from '@/components/MusicPlayer';
-import Timeline from '@/components/Timeline';
-import InteractiveStoryMode from "@/components/InteractiveStoryMode";
+import Loading from "@/components/Loading";
 
 import { Button } from '@/components/ui/button';
 
@@ -23,19 +23,41 @@ import userSB from '@/lib/supabase/user.js';
 
 
 export default function Home({ params }) {
-  const [user, setUser] = useState([]);
+  const router = useRouter();
+  const [user, setUser] = useState(
+    {
+      id: null,
+      name: null,
+      avatar: null,
+      created_at: null,
+      update_at: null,
+      uniq_url: null,
+      user_id: null
+    }
+  );
   const [memories, setMemories] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [featured, setFeatured] = useState([]);
+  // const [featured, setFeatured] = useState([]);
   const [music, setMusic] = useState([]);
   const [title, setTitle] = useState('');
-  useEffect(() => {
 
+  useEffect(() => {
     async function fetchUserByURL() {
-      const data = await userSB.getUserByUrl(params.url);
-      setUser(data[0]);
+      try {
+        const data = await userSB.getUserByUrl(params.url);
+
+        if (!data || data.length === 0) {
+          router.push("/404"); // Redirect ke halaman 404
+          return;
+        }
+        setUser(data[0]);
+      } catch (err) {
+        console.log(err)
+      }
     }
     fetchUserByURL();
+  }, [params.url, router]);
+  useEffect(() => {
 
     async function fetchTitle() {
       const data = await titleSB.getTitle();
@@ -55,19 +77,19 @@ export default function Home({ params }) {
     }
     fetchCategories();
 
-    async function fetchFeatured() {
-      const data = await sliderSB.getSlider();
-      setFeatured(data);
-    }
-    fetchFeatured();
+    // async function fetchFeatured() {
+    //   const data = await sliderSB.getSlider();
+    //   setFeatured(data);
+    // }
+    // fetchFeatured();
 
     async function fetchMemories() {
-      const data = await memoriesSB.getMemories();
+      const data = await memoriesSB.getMemoriesByUser_ID(user.user_id);
       setMemories(data);
     }
     fetchMemories();
-  }, []);
-
+  }, [params.url, user]);
+  if (!user.user_id) return <Loading />;
   return (
     <main className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-50 to-pink-50">
 
@@ -94,9 +116,9 @@ export default function Home({ params }) {
           </div>
         </div>
 
-        <div className="mb-12">
+        {/* <div className="mb-12">
           <FeaturedSlider memories={featured} />
-        </div>
+        </div> */}
 
         <div className="mb-16">
           <h2 className="text-3xl font-bold text-center mb-8 text-gray-800">Our Memory Categories</h2>
