@@ -78,7 +78,7 @@ export default function Home({ params }) {
 
 
     async function fetchMusic() {
-      const data = await musicSB.getMusic();
+      const data = await musicSB.getMusicByUser_ID(user.user_id);
       setMusic(data);
     }
     fetchMusic();
@@ -105,13 +105,13 @@ export default function Home({ params }) {
   return (
     <main className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-50 to-pink-50">
       <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="flex justify-end mb-4">
+        {/* <div className="flex justify-end mb-4">
           <Link href="/admin">
             <Button variant="outline" className="hover:bg-pink-100">
               Admin Panel
             </Button>
           </Link>
-        </div>
+        </div> */}
 
         <div className="text-center mb-12">
           <div className="flex items-center justify-center gap-2 mb-4">

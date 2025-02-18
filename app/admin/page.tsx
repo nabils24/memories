@@ -11,13 +11,15 @@ import { Calendar, Image as ImageIcon, Music, Video, X, Plus, MessageCircleHeart
 import { useToast } from "@/hooks/use-toast"
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { format } from 'date-fns';
+import { format, set } from 'date-fns';
 
 import { uploadPhoto, uploadVideo, uploadMusic } from '@/lib/supabase/upload.js';
+import supabase from "@/lib/supabase/config.js";
 import memoriesSB from '@/lib/supabase/memories.js';
 import categoriesSB from '@/lib/supabase/categories.js';
 import musicSB from '@/lib/supabase/music.js';
 import titleSB from '@/lib/supabase/title.js';
+import userSB from '@/lib/supabase/user.js';
 
 const availableIcons = [
   { name: 'MessageHeart', icon: MessageCircleHeart },
@@ -32,6 +34,11 @@ export default function AdminPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [create, setCreate] = useState(false);
 
+  //StateForUserAdmin
+  const [uuid, setUUID] = useState(null);
+  const [userData, setuserData] = useState(null);
+  const [uniqUrl, setUniqUrl] = useState(null);
+
   // State for tracking original and modified data
   const [memories, setMemories] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -45,15 +52,31 @@ export default function AdminPage() {
   });
   const [isLoading, setIsLoading] = useState(false);
 
+  // Fetch UserLogged 
+  const fetchUserLogged = async () => {
+    try {
+      const { user } = await userSB.getUserLogged();
+      setUUID(user.id);
+      const getUser = await userSB.getUser(user.id);
+      setUniqUrl(getUser.uniq_url);
+    } catch (error) {
+      if (error.name === 'AuthSessionMissingError') {
+        router.push('/auth/login');
+      }
+    }
+  };
+
   // Fetch all data on component mount
   const fetchAllData = async () => {
     try {
       const [memoriesData, categoriesData, musicData, titleData] = await Promise.all([
-        memoriesSB.getMemories(),
-        categoriesSB.getCategories(),
-        musicSB.getMusic(),
-        titleSB.getTitle()
+        memoriesSB.getMemoriesByUser_ID(uuid),
+        categoriesSB.getByUIDCategories(uuid),
+        musicSB.getMusicByUser_ID(uuid),
+        titleSB.getByUIDTitle(uuid)
       ]);
+
+      console.log(titleData);
 
       setMemories(memoriesData);
       setCategories(categoriesData);
@@ -74,18 +97,15 @@ export default function AdminPage() {
   };
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const storedValue = sessionStorage.getItem("siapakamu");
-      setSiapakamu(storedValue);
-      if (!storedValue) {
-        router.push('/siapakamu');
-      }
-    }
+    fetchUserLogged();
   }, []);
 
+
   useEffect(() => {
-    fetchAllData();
-  }, []);
+    if (uuid) {
+      fetchAllData();
+    }
+  }, [uuid]);
 
   // Check if there are unsaved changes
   const hasChanges = () => {
@@ -104,7 +124,8 @@ export default function AdminPage() {
         url: '',
         caption: '',
         date: format(new Date(), 'yyyy-MM-dd'),
-        category: ''
+        category: '',
+        user_id: uuid
       };
       const createdMemory = await memoriesSB.createMemory(newMemory);
       if (createdMemory) {
@@ -159,7 +180,9 @@ export default function AdminPage() {
       const newCategory = {
         name: '',
         description: '',
-        icon: 'Heart'
+        icon: 'Heart',
+        user_id: uuid
+
       };
       const createdCategory = await categoriesSB.createCategory(newCategory);
       fetchAllData();
@@ -209,7 +232,8 @@ export default function AdminPage() {
       const newMusic = {
         music_url: '',
         playlist: '',
-        name_music: ''
+        name_music: '',
+        user_id: uuid
       };
       const createdMusic = await musicSB.createMusic(newMusic);
       setBackgroundMusic([...backgroundMusic, createdMusic]);
@@ -379,13 +403,20 @@ export default function AdminPage() {
 
   //HandleBackToMemories
   const handleBackToMemories = async () => {
-    if (typeof window !== "undefined") {
-      try {
-        sessionStorage.removeItem("siapakamu");
-        window.location.href = "/";
-      } catch (e) {
-        return false;
-      }
+    try {
+
+      router.push('/id/' + uniqUrl);
+    } catch (error) {
+      console.error('Error logout:', error);
+    }
+  }
+
+  const handlesignout = async () => {
+    try {
+      let { error } = await supabase.auth.signOut();
+      router.push('/id/' + uniqUrl);
+    } catch (error) {
+      console.error('Error logout:', error);
     }
   }
 
@@ -404,6 +435,7 @@ export default function AdminPage() {
             </Button>
 
             <Button onClick={handleBackToMemories} variant="outline" className="w-full md:w-auto">Back to Memories</Button>
+            <Button onClick={handlesignout} variant="outline" className="w-full md:w-auto">Sign out</Button>
 
           </div>
         </div>
@@ -416,7 +448,7 @@ export default function AdminPage() {
             <TabsTrigger value="title">Title</TabsTrigger>
           </TabsList>
 
-          {/* Memories Tab DONE */}
+          {/* Memories Tab  */}
           <TabsContent value="memories" className="space-y-6">
             <div className="flex gap-4">
               <Button
@@ -510,7 +542,7 @@ export default function AdminPage() {
                         </SelectTrigger>
                         <SelectContent>
                           {categories.map((category) => (
-                            <SelectItem key={category?.id} value={category?.id || ''}>
+                            <SelectItem key={category?.id} value={category?.name || ''}>
                               {category?.name || 'Unnamed Category'}
                             </SelectItem>
                           ))}
@@ -531,7 +563,7 @@ export default function AdminPage() {
             )}
           </TabsContent>
 
-          {/* Categories Tab DONE */}
+          {/* Categories Tab  */}
           <TabsContent value="categories" className="space-y-6">
             <Button
               onClick={handleAddCategory}
@@ -596,7 +628,7 @@ export default function AdminPage() {
             </div>
           </TabsContent>
 
-          {/* Music Tab DONE*/}
+          {/* Music Tab */}
           <TabsContent value="music" className="space-y-6">
             <Button
               onClick={handleAddMusic}

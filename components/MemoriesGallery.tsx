@@ -410,13 +410,13 @@ export default function MemoriesGallery({ memories }: MemoriesGalleryProps) {
             <Select onValueChange={setSelectedCategory}>
               <SelectTrigger className="w-full sm:w-[180px]">{selectedCategory}</SelectTrigger>
               <SelectContent>
-          <SelectGroup>
-            <SelectItem value="All">Semua</SelectItem>
-            <SelectItem value="Bookmarked">Bookmarked</SelectItem>
-            {categories.map((category) => (
-              <SelectItem key={category} value={category}>{category}</SelectItem>
-            ))}
-          </SelectGroup>
+                <SelectGroup>
+                  <SelectItem value="All">Semua</SelectItem>
+                  <SelectItem value="Bookmarked">Bookmarked</SelectItem>
+                  {/* {categories.map((category) => (
+                    <SelectItem key={category.id} value={category.name}>{category.name}</SelectItem>
+                  ))} */}
+                </SelectGroup>
               </SelectContent>
             </Select>
           </div>
@@ -490,7 +490,6 @@ export default function MemoriesGallery({ memories }: MemoriesGalleryProps) {
                     </span>
                   </div>
                   <div className="flex items-center text-gray-600 mt-1">
-                    <Candy className="w-4 h-4 mr-1" />
                     <span className="text-sm">{memory.category}</span>
                   </div>
                   {/* Baris tombol Like dan Share */}

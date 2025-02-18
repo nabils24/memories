@@ -191,7 +191,13 @@ export default function SignUp() {
             setIsLoading(true);
             const { data: { user } } = await supabase.auth.getUser()
             await updateUser(user?.id, { uniq_url: url })
-
+            if (user) {
+                const { data, error } = await supabase
+                    .from('title')
+                    .insert([
+                        { user_id: user?.id, title: url },
+                    ])
+            }
             toast({
                 title: "Success!",
                 description: "Your Url has been updated!",
