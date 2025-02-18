@@ -55,7 +55,7 @@ const FeatureItem = ({ Icon, text }) => (
 const FeatureComponent = () => {
     const features = [
         {
-            reverse: true,
+            reverse: false,
             category: 'Upload',
             title: 'Upload Sepuasnya dengan kenangankita',
             imageSrc: 'https://dummyimage.com/16:9x1080/',
@@ -64,7 +64,7 @@ const FeatureComponent = () => {
                 { Icon: Sparkles, text: 'Video' },
                 { Icon: Lightbulb, text: 'Image' }
             ]
-        },{
+        }, {
             reverse: false,
             category: 'Music',
             title: 'Upload Music kesukaan kamu',
