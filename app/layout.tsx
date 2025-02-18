@@ -6,8 +6,10 @@ import { Toaster } from "@/components/ui/toaster"
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Kenangan kita❤️',
-  description: 'Made by Love xixixi',
+  title: '@KenanganKita buat kenangan dengan mudah:)',
+  openGraph: {
+    images: 'https://i.ibb.co.com/gM3SSn2d/kita.png',
+  },
 };
 
 export default function RootLayout({
