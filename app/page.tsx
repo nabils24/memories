@@ -81,15 +81,15 @@ export default function Home() {
             {/* Section 1: JUMBOTRON */}
             
             <motion.section
-                className="w-full max-w-6xl my-10 flex flex-col md:flex-row items-center p-6"
+                className="w-full max-w-6xl my-10 flex flex-col items-center text-center p-6"
                 initial={{ opacity: 0, y: -50 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8 }}
             >
                 {/* Kiri: Text */}
-                <div className="md:w-1/2 p-6">
+                <div className="w-full p-6">
                     <h2 className="text-4xl font-bold text-pink-700">
-                        Simpan Kenangan Kamu
+                        🌟Simpan Kenangan Kamu🌟
                     </h2>
                     <p className="text-lg text-gray-600 mt-4">
                         Buat kenangan menjadi lebih menarik dengan platform kami yang penuh
@@ -100,17 +100,6 @@ export default function Home() {
                             Daftar Sekarang Juga
                         </Button>
                     </Link>
-                </div>
-                {/* Kanan: Mockup Web */}
-                <div className="md:w-1/2 p-6">
-                    <motion.div
-                        className="w-full h-64 bg-gray-200 flex items-center justify-center rounded-lg shadow-md"
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.8 }}
-                    >
-                        <span className="text-2xl text-gray-500">Mockup Web</span>
-                    </motion.div>
                 </div>
             </motion.section>
 

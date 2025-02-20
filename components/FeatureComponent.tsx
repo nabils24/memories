@@ -58,7 +58,7 @@ const FeatureComponent = () => {
             reverse: false,
             category: 'Upload',
             title: 'Upload Sepuasnya dengan kenangankita',
-            imageSrc: 'https://dummyimage.com/16:9x1080/',
+            imageSrc: 'https://gyditryslflaxxjupqvi.supabase.co/storage/v1/object/public/kenangankita_public_img//UploadKenangan.png',
             imageAlt: 'Feature 1',
             items: [
                 { Icon: Sparkles, text: 'Video' },
@@ -68,7 +68,7 @@ const FeatureComponent = () => {
             reverse: false,
             category: 'Music',
             title: 'Upload Music kesukaan kamu',
-            imageSrc: 'https://dummyimage.com/16:9x1080/',
+            imageSrc: 'https://gyditryslflaxxjupqvi.supabase.co/storage/v1/object/public/kenangankita_public_img//UploadMusic.png',
             imageAlt: 'Feature 2',
             items: [
                 { Icon: Sparkles, text: 'Music' },
