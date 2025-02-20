@@ -60,15 +60,13 @@ export default function SignUp() {
                     .eq('user_id', userData.id)
                     .single();
 
-                if (fetchError) throw fetchError;
-
                 if (existingUser) {
                     if (!existingUser.uniq_url) {
                         setTabs('seturl');
                     } else {
                         router.push(`/admin`);
                     }
-                } else {
+                } else if (fetchError.code === 'PGRST116') {
                     const { error: profileError } = await supabase
                         .from('user')
                         .insert([{
