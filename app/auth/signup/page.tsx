@@ -280,7 +280,7 @@ export default function SignUp() {
             });
         } finally {
             setIsLoading(false);
-            router.push(`/id/${url}`);
+            router.push(`/admin`);
         }
 
     }
