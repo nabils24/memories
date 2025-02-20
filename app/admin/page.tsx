@@ -54,16 +54,15 @@ export default function AdminPage() {
 
   // Fetch UserLogged 
   const fetchUserLogged = async () => {
-    try {
-      const { user } = await userSB.getUserLogged();
+    const { user } = await userSB.getUserLogged();
+    if (!user) {
+      router.push('auth/login')
+    } else if(user) {
       setUUID(user.id);
       const getUser = await userSB.getUser(user.id);
       setUniqUrl(getUser.uniq_url);
-    } catch (error) {
-      if (error.name === 'AuthSessionMissingError') {
-        router.push('/auth/login');
-      }
     }
+
   };
 
   // Fetch all data on component mount

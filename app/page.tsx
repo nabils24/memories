@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle, Music, Video, Image, UserPlus } from "lucide-react";
 import { Marquee } from "@/components/magicui/marquee";
+import { Meteors } from "@/components/magicui/meteors";
 import FeatureComponent from '@/components/FeatureComponent';
 import { motion } from "framer-motion";
 import Link from "next/link";
@@ -78,6 +79,7 @@ export default function Home() {
     return (
         <div className="min-h-screen bg-pink-100 flex flex-col items-center">
             {/* Section 1: JUMBOTRON */}
+            
             <motion.section
                 className="w-full max-w-6xl my-10 flex flex-col md:flex-row items-center p-6"
                 initial={{ opacity: 0, y: -50 }}

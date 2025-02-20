@@ -1,6 +1,13 @@
-"use client"
+"use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+
+declare global {
+    interface Window {
+        handleGetDataFromCallback: (userData: any) => void;
+    }
+}
+import { useTheme } from "next-themes";
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -13,6 +20,9 @@ import { useToast } from "@/hooks/use-toast"
 import { uploadAvatar } from '@/lib/supabase/upload';
 import supabase from "@/lib/supabase/config.js";
 import { updateUser } from '@/lib/supabase/user';
+import { Particles } from "@/components/magicui/particles";
+import Image from 'next/image';
+import GoogleSignIn from '@/components/ui/GoogleSignIn';
 
 export default function SignUp() {
     const router = useRouter();
@@ -29,6 +39,62 @@ export default function SignUp() {
     const [url, setUrl] = useState('')
     const [tabs, setTabs] = useState('signup')
     const { toast } = useToast();
+    const [isGoogleSignInModalOpen, setIsGoogleSignInModalOpen] = useState(false);
+    const [user, setUser] = useState(null);
+
+    //particle
+    const { resolvedTheme } = useTheme();
+    const [color, setColor] = useState("#ffffff");
+
+    useEffect(() => {
+        setColor(resolvedTheme === "dark" ? "#ffffff" : "#000000");
+    }, [resolvedTheme]);
+
+    useEffect(() => {
+        window.handleGetDataFromCallback = async (userData) => {
+            setUser(userData);
+            try {
+                const { data: existingUser, error: fetchError } = await supabase
+                    .from('user')
+                    .select('uniq_url')
+                    .eq('user_id', userData.id)
+                    .single();
+
+                if (fetchError) throw fetchError;
+
+                if (existingUser) {
+                    if (!existingUser.uniq_url) {
+                        setTabs('seturl');
+                    } else {
+                        router.push(`/admin`);
+                    }
+                } else {
+                    const { error: profileError } = await supabase
+                        .from('user')
+                        .insert([{
+                            user_id: userData.id,
+                            name: userData.user_metadata.full_name,
+                            avatar: userData.user_metadata.avatar_url
+                        }]);
+
+                    if (profileError) throw profileError;
+
+                    toast({
+                        title: "Success!",
+                        description: "Your account has been created successfully.",
+                    });
+                    setTabs('seturl');
+                }
+            } catch (error) {
+                console.error('Error handling user profile:', error);
+                toast({
+                    variant: "destructive",
+                    title: "Error",
+                    description: error.message || "Failed to handle account. Please try again.",
+                });
+            }
+        };
+    }, []);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -179,6 +245,11 @@ export default function SignUp() {
         }
     };
 
+    //handle route
+    const handleRoute = async (route) => {
+        router.push(route);
+    }
+
     //Url
 
     const handleUpdateUrlChange = async (value) => {
@@ -217,203 +288,237 @@ export default function SignUp() {
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-            >
-                {tabs === 'signup' && (
-                    <Card className="w-full max-w-md shadow-lg">
-                        <CardHeader>
-                            <CardTitle className="text-2xl font-bold text-center">
-                                Buat Akun
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <form onSubmit={handleSubmit} className="space-y-6">
-                                <motion.div
-                                    initial={{ opacity: 0, x: -20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: 0.2 }}
-                                >
-                                    <Label htmlFor="name">Name</Label>
-                                    <Input
-                                        id="name"
-                                        name="name"
-                                        value={formData.name}
-                                        onChange={handleInputChange}
-                                        placeholder="Enter your name"
-                                        className="mt-1"
-                                        disabled={isLoading}
-                                        required
-                                    />
-                                </motion.div>
-
-                                <motion.div
-                                    initial={{ opacity: 0, x: -20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: 0.3 }}
-                                >
-                                    <Label htmlFor="email">Email</Label>
-                                    <Input
-                                        id="email"
-                                        name="email"
-                                        type="email"
-                                        value={formData.email}
-                                        onChange={handleInputChange}
-                                        placeholder="Enter your email"
-                                        className="mt-1"
-                                        disabled={isLoading}
-                                        required
-                                    />
-                                </motion.div>
-
-                                <motion.div
-                                    initial={{ opacity: 0, x: -20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: 0.4 }}
-                                    className="relative"
-                                >
-                                    <Label htmlFor="password">Password</Label>
-                                    <div className="relative">
+        <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4 overflow-hidden">
+            <div className='relative z-10 w-full max-w-md'>
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5 }}
+                >
+                    {tabs === 'signup' && (
+                        <Card className="w-full max-w-md shadow-lg">
+                            <CardHeader>
+                                <CardTitle className="text-2xl font-bold text-center">
+                                    Buat Akun
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <form onSubmit={handleSubmit} className="space-y-6">
+                                    <motion.div
+                                        initial={{ opacity: 0, x: -20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: 0.2 }}
+                                    >
+                                        <Label htmlFor="name">Name</Label>
                                         <Input
-                                            id="password"
-                                            name="password"
-                                            type={showPassword ? 'text' : 'password'}
-                                            value={formData.password}
+                                            id="name"
+                                            name="name"
+                                            value={formData.name}
                                             onChange={handleInputChange}
-                                            placeholder="Enter your password"
+                                            placeholder="Enter your name"
                                             className="mt-1"
                                             disabled={isLoading}
                                             required
                                         />
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="icon"
-                                            className="absolute right-2 top-1/2 -translate-y-1/2"
-                                            onClick={() => setShowPassword(!showPassword)}
-                                            disabled={isLoading}
-                                        >
-                                            {showPassword ? <EyeOffIcon size={20} /> : <EyeIcon size={20} />}
-                                        </Button>
-                                    </div>
-                                </motion.div>
+                                    </motion.div>
 
-                                <motion.div
-                                    initial={{ opacity: 0, x: -20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: 0.5 }}
-                                    className="space-y-2"
-                                >
-                                    <Label>Avatar</Label>
-                                    <div className="flex items-center gap-4">
-                                        <Avatar className="w-16 h-16">
-                                            {isUploading ? (
-                                                <AvatarFallback>
-                                                    <Loader2 className="w-6 h-6 animate-spin" />
-                                                </AvatarFallback>
-                                            ) : previewUrl ? (
-                                                <AvatarImage src={previewUrl} alt="Avatar preview" />
-                                            ) : (
-                                                <AvatarFallback>
-                                                    <Upload className="w-6 h-6" />
-                                                </AvatarFallback>
-                                            )}
-                                        </Avatar>
+                                    <motion.div
+                                        initial={{ opacity: 0, x: -20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: 0.3 }}
+                                    >
+                                        <Label htmlFor="email">Email</Label>
                                         <Input
-                                            id="avatar"
-                                            type="file"
-                                            accept="image/*"
-                                            onChange={(e) => {
-                                                const file = e.target.files?.[0];
-                                                if (file) {
-                                                    handleAvatarUpload(file);
-                                                }
-                                            }}
-                                            className="max-w-[200px]"
-                                            disabled={isLoading || isUploading}
+                                            id="email"
+                                            name="email"
+                                            type="email"
+                                            value={formData.email}
+                                            onChange={handleInputChange}
+                                            placeholder="Enter your email"
+                                            className="mt-1"
+                                            disabled={isLoading}
+                                            required
                                         />
+                                    </motion.div>
+
+                                    <motion.div
+                                        initial={{ opacity: 0, x: -20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: 0.4 }}
+                                        className="relative"
+                                    >
+                                        <Label htmlFor="password">Password</Label>
+                                        <div className="relative">
+                                            <Input
+                                                id="password"
+                                                name="password"
+                                                type={showPassword ? 'text' : 'password'}
+                                                value={formData.password}
+                                                onChange={handleInputChange}
+                                                placeholder="Enter your password"
+                                                className="mt-1"
+                                                disabled={isLoading}
+                                                required
+                                            />
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="icon"
+                                                className="absolute right-2 top-1/2 -translate-y-1/2"
+                                                onClick={() => setShowPassword(!showPassword)}
+                                                disabled={isLoading}
+                                            >
+                                                {showPassword ? <EyeOffIcon size={20} /> : <EyeIcon size={20} />}
+                                            </Button>
+                                        </div>
+                                    </motion.div>
+
+                                    <motion.div
+                                        initial={{ opacity: 0, x: -20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: 0.5 }}
+                                        className="space-y-2"
+                                    >
+                                        <Label>Avatar to set If you sent with social media..</Label>
+                                        <div className="flex items-center gap-4">
+                                            <Avatar className="w-16 h-16">
+                                                {isUploading ? (
+                                                    <AvatarFallback>
+                                                        <Loader2 className="w-6 h-6 animate-spin" />
+                                                    </AvatarFallback>
+                                                ) : previewUrl ? (
+                                                    <AvatarImage src={previewUrl} alt="Avatar preview" />
+                                                ) : (
+                                                    <AvatarFallback>
+                                                        <Upload className="w-6 h-6" />
+                                                    </AvatarFallback>
+                                                )}
+                                            </Avatar>
+                                            <Input
+                                                id="avatar"
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={(e) => {
+                                                    const file = e.target.files?.[0];
+                                                    if (file) {
+                                                        handleAvatarUpload(file);
+                                                    }
+                                                }}
+                                                className="max-w-[200px]"
+                                                disabled={isLoading || isUploading}
+                                            />
+                                        </div>
+                                    </motion.div>
+
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: 0.6 }}
+                                    >
+                                        <div className='flex justify-between gap-16'>
+                                            <Button
+                                                onClick={() => handleRoute('/auth/login')}
+                                                variant="outline"
+                                                className="w-full"
+                                                disabled={isLoading || isUploading}
+                                            >
+
+                                                Login
+
+                                            </Button>
+                                            <Button
+                                                type="submit"
+                                                className="w-full"
+                                                disabled={isLoading || isUploading}
+                                            >
+                                                {isLoading ? (
+                                                    <>
+                                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                        Creating Account...
+                                                    </>
+                                                ) : (
+                                                    'Sign Up'
+                                                )}
+                                            </Button>
+                                        </div>
+                                    </motion.div>
+
+                                </form>
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.6 }}
+                                >
+                                    <div className='flex flex-col mt-3'>
+                                        <div className='text-center mb-3'>
+                                            Or
+                                        </div>
+                                        <GoogleSignIn />
                                     </div>
                                 </motion.div>
-
-                                <motion.div
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.6 }}
-                                >
-                                    <Button
-                                        type="submit"
-                                        className="w-full"
-                                        disabled={isLoading || isUploading}
+                            </CardContent>
+                        </Card>
+                    )}
+                    {tabs === 'seturl' && (
+                        <Card className="w-full max-w-md shadow-lg">
+                            <CardHeader>
+                                <CardTitle className="text-2xl font-bold text-center">
+                                    Buat URL Unik mu
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <form onSubmit={handleUpdateUrl} className="space-y-6">
+                                    <motion.div
+                                        initial={{ opacity: 0, x: -20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: 0.2 }}
                                     >
-                                        {isLoading ? (
-                                            <>
-                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                Creating Account...
-                                            </>
-                                        ) : (
-                                            'Sign Up'
-                                        )}
-                                    </Button>
-                                </motion.div>
-                            </form>
-                        </CardContent>
-                    </Card>
-                )}
-                {tabs === 'seturl' && (
-                    <Card className="w-full max-w-md shadow-lg">
-                        <CardHeader>
-                            <CardTitle className="text-2xl font-bold text-center">
-                                Buat URL Unik mu
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <form onSubmit={handleUpdateUrl} className="space-y-6">
-                                <motion.div
-                                    initial={{ opacity: 0, x: -20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: 0.2 }}
-                                >
-                                    <Label htmlFor="name">URL Unik Kamu🤗</Label>
-                                    <Input
-                                        id="name"
-                                        name="name"
-                                        value={url}
-                                        onChange={(e) => handleUpdateUrlChange(e.target.value)}
-                                        placeholder="Misal /kenangan_nabil&soffie"
-                                        className="mt-1"
-                                        disabled={isLoading}
-                                        required
-                                    />
-                                </motion.div>
+                                        <Label htmlFor="name">URL Unik Kamu🤗</Label>
+                                        <Input
+                                            id="name"
+                                            name="name"
+                                            value={url}
+                                            onChange={(e) => handleUpdateUrlChange(e.target.value)}
+                                            placeholder="Misal /kenangan_nabil&soffie"
+                                            className="mt-1"
+                                            disabled={isLoading}
+                                            required
+                                        />
+                                    </motion.div>
 
-                                <motion.div
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.6 }}
-                                >
-                                    <Button
-                                        type="submit"
-                                        className="w-full"
-                                        disabled={isLoading || isUploading}
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: 0.6 }}
                                     >
-                                        {isLoading ? (
-                                            <>
-                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                Sabar ya...
-                                            </>
-                                        ) : (
-                                            'Lanjut'
-                                        )}
-                                    </Button>
-                                </motion.div>
-                            </form>
-                        </CardContent>
-                    </Card>
-                )}
-            </motion.div>
+                                        <Button
+                                            type="submit"
+                                            className="w-full"
+                                            disabled={isLoading || isUploading}
+                                        >
+                                            {isLoading ? (
+                                                <>
+                                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                    Sabar ya...
+                                                </>
+                                            ) : (
+                                                'Lanjut'
+                                            )}
+                                        </Button>
+                                    </motion.div>
+                                </form>
+                            </CardContent>
+                        </Card>
+                    )}
+                </motion.div>
+            </div>
+            <Particles
+                className="absolute inset-0 z-0"
+                quantity={100}
+                ease={80}
+                color={color}
+                refresh
+            />
         </div>
     );
 }
