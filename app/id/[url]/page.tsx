@@ -34,7 +34,6 @@ export default function Home({ params }) {
   });
   const [memories, setMemories] = useState([]);
   const [categories, setCategories] = useState([]);
-  // const [featured, setFeatured] = useState([]);
   const [music, setMusic] = useState([]);
   const [title, setTitle] = useState('');
 
@@ -89,6 +88,18 @@ export default function Home({ params }) {
     fetchMemories();
   }, [params.url, user]);
 
+  const getRandomMemoryImage = () => {
+    if (memories.length > 0) {
+      const randomIndex = Math.floor(Math.random() * memories.length);
+      return memories[randomIndex].image_url;
+    }
+    return user.avatar;
+  };
+
+  const getMetaDescription = () => {
+    return `Explore the memories and journey of ${user.name || params.url}`;
+  };
+
   if (!user.user_id) {
     return (
       <>
@@ -105,10 +116,11 @@ export default function Home({ params }) {
       <Head>
         <title>{title || params.url}</title>
         <meta property="og:title" content={title || params.url} />
-        {user.avatar && <meta property="og:image" content={user.avatar} />}
+        <meta property="og:image" content={getRandomMemoryImage()} />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={title || params.url} />
-        {user.avatar && <meta name="twitter:image" content={user.avatar} />}
+        <meta name="twitter:image" content={getRandomMemoryImage()} />
+        <meta name="description" content={getMetaDescription()} />
       </Head>
       <main className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-50 to-pink-50">
         <div className="max-w-7xl mx-auto px-4 py-8">
