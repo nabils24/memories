@@ -4,14 +4,12 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Image as ImageIcon, Music, Video, X, Plus, MessageCircleHeart, Heart, Compass } from 'lucide-react';
-import { useToast } from "@/hooks/use-toast"
+import { Calendar, Image as ImageIcon, Music, Video, X, Plus, MessageCircleHeart, Heart, Compass, Settings, Home, LogOut, BookOpen } from 'lucide-react';
+import { useToast } from "@/hooks/use-toast";
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { format, set } from 'date-fns';
+import { format } from 'date-fns';
 
 import { uploadPhoto, uploadVideo, uploadMusic } from '@/lib/supabase/upload.js';
 import supabase from "@/lib/supabase/config.js";
@@ -29,17 +27,16 @@ const availableIcons = [
 
 export default function AdminPage() {
   const router = useRouter();
-  const [siapakamu, setSiapakamu] = useState(null);
-  const { toast } = useToast()
+  const { toast } = useToast();
   const [isUploading, setIsUploading] = useState(false);
   const [create, setCreate] = useState(false);
+  const [activeTab, setActiveTab] = useState("memories");
 
-  //StateForUserAdmin
+  // State for User Admin
   const [uuid, setUUID] = useState(null);
-  const [userData, setuserData] = useState(null);
   const [uniqUrl, setUniqUrl] = useState(null);
 
-  // State for tracking original and modified data
+  // Data states
   const [memories, setMemories] = useState([]);
   const [categories, setCategories] = useState([]);
   const [backgroundMusic, setBackgroundMusic] = useState([]);
@@ -52,46 +49,44 @@ export default function AdminPage() {
   });
   const [isLoading, setIsLoading] = useState(false);
 
-  // Fetch UserLogged 
+  // Sidebar untuk mobile
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+
+  // Fetch User Logged In
   const fetchUserLogged = async () => {
     const { user } = await userSB.getUserLogged();
     if (!user) {
-      router.push('auth/login')
-    } else if(user) {
+      router.push('auth/login');
+    } else {
       setUUID(user.id);
       const getUser = await userSB.getUser(user.id);
       setUniqUrl(getUser.uniq_url);
     }
-
   };
 
-  // Fetch all data on component mount
+  // Fetch Semua Data
   const fetchAllData = async () => {
     try {
-      const [memoriesData, categoriesData, musicData, titleData] = await Promise.all([
+      const [memoriesData, categoriesData, musicData, titleDataRes] = await Promise.all([
         memoriesSB.getMemoriesByUser_ID(uuid),
         categoriesSB.getByUIDCategories(uuid),
         musicSB.getMusicByUser_ID(uuid),
         titleSB.getByUIDTitle(uuid)
       ]);
 
-      console.log(titleData);
-
       setMemories(memoriesData);
       setCategories(categoriesData);
       setBackgroundMusic(musicData);
-      setTitleData(titleData[0]?.title || '');
+      setTitleData(titleDataRes[0]?.title || '');
 
-      // Store original data for change detection
       setOriginalData({
         memories: memoriesData,
         categories: categoriesData,
         backgroundMusic: musicData,
-        titleData: titleData[0]?.title || ''
+        titleData: titleDataRes[0]?.title || ''
       });
     } catch (error) {
       console.error('Error fetching data:', error);
-
     }
   };
 
@@ -99,18 +94,17 @@ export default function AdminPage() {
     fetchUserLogged();
   }, []);
 
-
   useEffect(() => {
     if (uuid) {
       fetchAllData();
     }
   }, [uuid]);
 
-  // Check if there are unsaved changes
+  // Cek apakah ada perubahan data
   const hasChanges = () => {
     return JSON.stringify(memories) !== JSON.stringify(originalData.memories) ||
       JSON.stringify(categories) !== JSON.stringify(originalData.categories) ||
-      backgroundMusic !== originalData.backgroundMusic ||
+      JSON.stringify(backgroundMusic) !== JSON.stringify(originalData.backgroundMusic) ||
       titleData !== originalData.titleData;
   };
 
@@ -119,7 +113,7 @@ export default function AdminPage() {
     try {
       setCreate(true);
       const newMemory = {
-        type, // 'image' or 'video'
+        type, // 'image' atau 'video'
         url: '',
         caption: '',
         date: format(new Date(), 'yyyy-MM-dd'),
@@ -128,14 +122,13 @@ export default function AdminPage() {
       };
       const createdMemory = await memoriesSB.createMemory(newMemory);
       if (createdMemory) {
-        setMemories(prevMemories => [...prevMemories, createdMemory]);
+        setMemories(prev => [...prev, createdMemory]);
         fetchAllData();
         setCreate(false);
         toast({
           title: "Berhasil Menambahkan!",
           description: format(new Date(), 'yyyy-MM-dd')
-        })
-
+        });
       }
     } catch (error) {
       console.error('Error adding memory:', error);
@@ -154,7 +147,7 @@ export default function AdminPage() {
       toast({
         title: "Berhasil Menghapus!",
         description: format(new Date(), 'yyyy-MM-dd')
-      })
+      });
     } catch (error) {
       console.error('Error deleting memory:', error);
       toast({
@@ -165,7 +158,7 @@ export default function AdminPage() {
     }
   };
 
-  const handleUpdateMemory = async (id, field, value) => {
+  const handleUpdateMemory = (id, field, value) => {
     const updatedMemory = memories.find(m => m.id === id);
     if (updatedMemory) {
       const newMemory = { ...updatedMemory, [field]: value };
@@ -181,15 +174,14 @@ export default function AdminPage() {
         description: '',
         icon: 'Heart',
         user_id: uuid
-
       };
       const createdCategory = await categoriesSB.createCategory(newCategory);
-      fetchAllData();
       setCategories([...categories, createdCategory]);
+      fetchAllData();
       toast({
         title: "Berhasil Menambahkan!",
         description: format(new Date(), 'yyyy-MM-dd')
-      })
+      });
     } catch (error) {
       console.error('Error adding category:', error);
       toast({
@@ -208,7 +200,7 @@ export default function AdminPage() {
       toast({
         title: "Berhasil Menghapus!",
         description: format(new Date(), 'yyyy-MM-dd')
-      })
+      });
     } catch (error) {
       console.error('Error deleting category:', error);
       toast({
@@ -240,7 +232,7 @@ export default function AdminPage() {
       toast({
         title: "Berhasil Menambahkan!",
         description: format(new Date(), 'yyyy-MM-dd')
-      })
+      });
     } catch (error) {
       console.error('Error adding music:', error);
       toast({
@@ -264,7 +256,7 @@ export default function AdminPage() {
       toast({
         title: "Berhasil Menghapus!",
         description: format(new Date(), 'yyyy-MM-dd')
-      })
+      });
     } catch (error) {
       console.error('Error deleting music:', error);
       toast({
@@ -274,7 +266,6 @@ export default function AdminPage() {
       });
     }
   };
-
 
   // File upload handler
   const handleFileUpload = async (memory, file) => {
@@ -296,7 +287,7 @@ export default function AdminPage() {
         toast({
           title: "Berhasil Upload!",
           description: format(new Date(), 'yyyy-MM-dd')
-        })
+        });
       }
     } catch (error) {
       console.error('Error uploading file:', error);
@@ -323,7 +314,7 @@ export default function AdminPage() {
         toast({
           title: "Berhasil Upload!",
           description: format(new Date(), 'yyyy-MM-dd')
-        })
+        });
       }
     } catch (error) {
       console.error('Error uploading file:', error);
@@ -337,11 +328,10 @@ export default function AdminPage() {
     }
   };
 
-  // Save all changes
+  // Save semua perubahan
   const handleSave = async () => {
     setIsLoading(true);
     try {
-      // Save memories changes
       const memoriesPromises = memories.map(memory => {
         const originalMemory = originalData.memories.find(m => m.id === memory.id);
         if (!originalMemory || JSON.stringify(memory) !== JSON.stringify(originalMemory)) {
@@ -350,7 +340,6 @@ export default function AdminPage() {
         return Promise.resolve();
       });
 
-      // Save categories changes
       const categoriesPromises = categories.map(category => {
         const originalCategory = originalData.categories.find(c => c.id === category.id);
         if (!originalCategory || JSON.stringify(category) !== JSON.stringify(originalCategory)) {
@@ -359,7 +348,6 @@ export default function AdminPage() {
         return Promise.resolve();
       });
 
-      // Save background music if changed
       const musicPromises = backgroundMusic.map(music => {
         const originalMusic = originalData.backgroundMusic.find(m => m.id === music.id);
         if (!originalMusic || JSON.stringify(music) !== JSON.stringify(originalMusic)) {
@@ -368,7 +356,6 @@ export default function AdminPage() {
         return Promise.resolve();
       });
 
-      // Save title if changed
       const titlePromise = titleData !== originalData.titleData
         ? titleSB.updateTitle({ title: titleData })
         : Promise.resolve();
@@ -380,7 +367,6 @@ export default function AdminPage() {
         titlePromise
       ]);
 
-      // Update original data after successful save
       setOriginalData({
         memories,
         categories,
@@ -390,65 +376,39 @@ export default function AdminPage() {
       toast({
         title: "Berhasil Menyimpan!",
         description: "Simpan!"
-      })
+      });
 
     } catch (error) {
       console.error('Error saving changes:', error);
-
     } finally {
       setIsLoading(false);
     }
   };
 
-  //HandleBackToMemories
+  // Navigasi kembali ke tampilan Memories
   const handleBackToMemories = async () => {
     try {
-
       router.push('/id/' + uniqUrl);
     } catch (error) {
-      console.error('Error logout:', error);
+      console.error('Error navigating:', error);
     }
-  }
+  };
 
   const handlesignout = async () => {
     try {
-      let { error } = await supabase.auth.signOut();
+      await supabase.auth.signOut();
       router.push('/id/' + uniqUrl);
     } catch (error) {
       console.error('Error logout:', error);
     }
-  }
+  };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 p-8">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800">Admin Panel</h1>
-          <div className="flex flex-col md:flex-row gap-4">
-            <Button
-              onClick={handleSave}
-              disabled={!hasChanges() || isLoading}
-              className="px-8"
-            >
-              {isLoading ? "Saving..." : "Save Changes"}
-            </Button>
-
-            <Button onClick={handleBackToMemories} variant="outline" className="w-full md:w-auto">Back to Memories</Button>
-            <Button onClick={handlesignout} variant="outline" className="w-full md:w-auto">Sign out</Button>
-
-          </div>
-        </div>
-
-        <Tabs defaultValue="memories" className="space-y-6">
-          <TabsList className="grid w-full max-w-md grid-cols-4">
-            <TabsTrigger value="memories">Memory</TabsTrigger>
-            <TabsTrigger value="categories">Category</TabsTrigger>
-            <TabsTrigger value="music">Music</TabsTrigger>
-            <TabsTrigger value="title">Title</TabsTrigger>
-          </TabsList>
-
-          {/* Memories Tab  */}
-          <TabsContent value="memories" className="space-y-6">
+  // Render konten berdasarkan tab yang aktif
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case "memories":
+        return (
+          <div className="space-y-6">
             <div className="flex gap-4">
               <Button
                 onClick={() => handleAddMemory('image')}
@@ -467,7 +427,6 @@ export default function AdminPage() {
                 {create ? "Mengirim..." : "Add Video"}
               </Button>
             </div>
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {memories.map((memory) => (
                 <Card key={memory?.id || crypto.randomUUID()} className="relative">
@@ -503,11 +462,7 @@ export default function AdminPage() {
                               className="max-h-40 object-cover rounded-md"
                             />
                           ) : (
-                            <video
-                              src={memory.url}
-                              className="max-h-40 w-full"
-                              controls
-                            />
+                            <video src={memory.url} className="max-h-40 w-full" controls />
                           )}
                         </div>
                       )}
@@ -547,9 +502,6 @@ export default function AdminPage() {
                           ))}
                         </SelectContent>
                       </Select>
-
-
-
                     </div>
                   </CardContent>
                 </Card>
@@ -560,10 +512,11 @@ export default function AdminPage() {
                 No memories available. Add a new memory to get started.
               </div>
             )}
-          </TabsContent>
-
-          {/* Categories Tab  */}
-          <TabsContent value="categories" className="space-y-6">
+          </div>
+        );
+      case "categories":
+        return (
+          <div className="space-y-6">
             <Button
               onClick={handleAddCategory}
               className="flex items-center gap-2"
@@ -571,7 +524,6 @@ export default function AdminPage() {
               <Plus className="w-4 h-4" />
               Add Category
             </Button>
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {categories.map((category) => (
                 <Card key={category.id} className="relative">
@@ -625,10 +577,11 @@ export default function AdminPage() {
                 </Card>
               ))}
             </div>
-          </TabsContent>
-
-          {/* Music Tab */}
-          <TabsContent value="music" className="space-y-6">
+          </div>
+        );
+      case "music":
+        return (
+          <div className="space-y-6">
             <Button
               onClick={handleAddMusic}
               className="flex items-center gap-2"
@@ -636,7 +589,6 @@ export default function AdminPage() {
               <Plus className="w-4 h-4" />
               Add Music
             </Button>
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {backgroundMusic.map((music) => (
                 <Card key={music.id} className="relative">
@@ -688,25 +640,165 @@ export default function AdminPage() {
                 </Card>
               ))}
             </div>
+          </div>
+        );
+      case "title":
+        return (
+          <Card>
+            <CardContent className="p-6 space-y-4">
+              <div className="space-y-2">
+                <Label>Title</Label>
+                <Input
+                  value={titleData}
+                  onChange={(e) => setTitleData(e.target.value)}
+                  placeholder="Enter title"
+                />
+              </div>
+            </CardContent>
+          </Card>
+        );
+      default:
+        return null;
+    }
+  };
 
-          </TabsContent>
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex">
+      {/* Sidebar Desktop */}
+      <div className="hidden md:flex flex-col bg-gradient-to-b from-purple-500 to-pink-500 text-white w-64 fixed h-full">
+        <div className="p-6">
+          <h1 className="text-xl font-bold tracking-wider">Memory Keeper</h1>
+        </div>
+        <div className="flex-1 px-4 space-y-6">
+          <div
+            onClick={() => setActiveTab("memories")}
+            className={`flex items-center p-3 rounded-lg cursor-pointer transition-colors ${activeTab === "memories" ? "bg-white bg-opacity-20" : "hover:bg-white hover:bg-opacity-10"}`}
+          >
+            <BookOpen className="w-6 h-6" />
+            <span className="ml-4">Memories</span>
+          </div>
+          <div
+            onClick={() => setActiveTab("categories")}
+            className={`flex items-center p-3 rounded-lg cursor-pointer transition-colors ${activeTab === "categories" ? "bg-white bg-opacity-20" : "hover:bg-white hover:bg-opacity-10"}`}
+          >
+            <Compass className="w-6 h-6" />
+            <span className="ml-4">Categories</span>
+          </div>
+          <div
+            onClick={() => setActiveTab("music")}
+            className={`flex items-center p-3 rounded-lg cursor-pointer transition-colors ${activeTab === "music" ? "bg-white bg-opacity-20" : "hover:bg-white hover:bg-opacity-10"}`}
+          >
+            <Music className="w-6 h-6" />
+            <span className="ml-4">Music</span>
+          </div>
+          <div
+            onClick={() => setActiveTab("title")}
+            className={`flex items-center p-3 rounded-lg cursor-pointer transition-colors ${activeTab === "title" ? "bg-white bg-opacity-20" : "hover:bg-white hover:bg-opacity-10"}`}
+          >
+            <Settings className="w-6 h-6" />
+            <span className="ml-4">Title</span>
+          </div>
+        </div>
+        <div className="p-4 space-y-3">
+          <div
+            onClick={handleBackToMemories}
+            className="flex items-center p-3 rounded-lg cursor-pointer transition-colors hover:bg-white hover:bg-opacity-10"
+          >
+            <Home className="w-6 h-6" />
+            <span className="ml-4">View Site</span>
+          </div>
+          <div
+            onClick={handlesignout}
+            className="flex items-center p-3 rounded-lg cursor-pointer transition-colors hover:bg-white hover:bg-opacity-10"
+          >
+            <LogOut className="w-6 h-6" />
+            <span className="ml-4">Sign Out</span>
+          </div>
+        </div>
+      </div>
 
-          {/* Title Tab */}
-          <TabsContent value="title">
-            <Card>
-              <CardContent className="p-6 space-y-4">
-                <div className="space-y-2">
-                  <Label>Title</Label>
-                  <Input
-                    value={titleData}
-                    onChange={(e) => setTitleData(e.target.value)}
-                    placeholder="Enter title"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+      {/* Sidebar Mobile */}
+      <div className={`md:hidden fixed inset-0 z-40 transition-transform transform ${mobileSidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
+        <div className="absolute inset-0 bg-black opacity-50" onClick={() => setMobileSidebarOpen(false)}></div>
+        <div className="relative bg-gradient-to-b from-purple-500 to-pink-500 text-white w-64 h-full p-6">
+          <h1 className="text-xl font-bold tracking-wider">Memory Keeper</h1>
+          <div className="mt-8 space-y-6">
+            <div
+              onClick={() => { setActiveTab("memories"); setMobileSidebarOpen(false); }}
+              className={`flex items-center p-3 rounded-lg cursor-pointer transition-colors ${activeTab === "memories" ? "bg-white bg-opacity-20" : "hover:bg-white hover:bg-opacity-10"}`}
+            >
+              <BookOpen className="w-6 h-6" />
+              <span className="ml-4">Memories</span>
+            </div>
+            <div
+              onClick={() => { setActiveTab("categories"); setMobileSidebarOpen(false); }}
+              className={`flex items-center p-3 rounded-lg cursor-pointer transition-colors ${activeTab === "categories" ? "bg-white bg-opacity-20" : "hover:bg-white hover:bg-opacity-10"}`}
+            >
+              <Compass className="w-6 h-6" />
+              <span className="ml-4">Categories</span>
+            </div>
+            <div
+              onClick={() => { setActiveTab("music"); setMobileSidebarOpen(false); }}
+              className={`flex items-center p-3 rounded-lg cursor-pointer transition-colors ${activeTab === "music" ? "bg-white bg-opacity-20" : "hover:bg-white hover:bg-opacity-10"}`}
+            >
+              <Music className="w-6 h-6" />
+              <span className="ml-4">Music</span>
+            </div>
+            <div
+              onClick={() => { setActiveTab("title"); setMobileSidebarOpen(false); }}
+              className={`flex items-center p-3 rounded-lg cursor-pointer transition-colors ${activeTab === "title" ? "bg-white bg-opacity-20" : "hover:bg-white hover:bg-opacity-10"}`}
+            >
+              <Settings className="w-6 h-6" />
+              <span className="ml-4">Title</span>
+            </div>
+          </div>
+          <div className="mt-8 space-y-3">
+            <div
+              onClick={() => { handleBackToMemories(); setMobileSidebarOpen(false); }}
+              className="flex items-center p-3 rounded-lg cursor-pointer transition-colors hover:bg-white hover:bg-opacity-10"
+            >
+              <Home className="w-6 h-6" />
+              <span className="ml-4">View Site</span>
+            </div>
+            <div
+              onClick={() => { handlesignout(); setMobileSidebarOpen(false); }}
+              className="flex items-center p-3 rounded-lg cursor-pointer transition-colors hover:bg-white hover:bg-opacity-10"
+            >
+              <LogOut className="w-6 h-6" />
+              <span className="ml-4">Sign Out</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 md:ml-64 p-4 md:p-8 overflow-y-auto">
+        {/* Tombol menu untuk mobile */}
+        <div className="md:hidden flex items-center justify-between mb-4">
+          <Button onClick={() => setMobileSidebarOpen(true)}>
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </Button>
+          <h1 className="text-2xl font-bold text-gray-800">
+            {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Manager
+          </h1>
+        </div>
+        {/* Header Desktop */}
+        <div className="hidden md:flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-800">
+            {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Manager
+          </h1>
+          <Button
+            onClick={handleSave}
+            disabled={!hasChanges() || isLoading}
+            className="px-8 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+          >
+            {isLoading ? "Saving..." : "Save Changes"}
+          </Button>
+        </div>
+        {/* Konten Tab */}
+        {renderTabContent()}
       </div>
     </div>
   );

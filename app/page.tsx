@@ -12,12 +12,6 @@ import Link from "next/link";
 
 const reviews = [
     {
-        name: "Soffie",
-        username: "@soffie",
-        body: "sumpah ini keren bangett kalian harus cobainn sihh",
-        img: "https://avatar.vercel.sh/jack",
-    },
-    {
         name: "yono",
         username: "@yono@32",
         body: "keren sih bisa atur atur music disini mana bisa disesuain yang mana dimulai",
@@ -30,8 +24,8 @@ const reviews = [
         img: "https://avatar.vercel.sh/john",
     },
     {
-        name: "ambon",
-        username: "@ambon",
+        name: "nona ambon",
+        username: "@nona_ambon",
         body: "kerenn kerenn bisa gerak gerak mana bisa diatur atur",
         img: "https://avatar.vercel.sh/jane",
     },
